@@ -543,6 +543,45 @@ class TriLinearInterpolatedFieldMap(xo.HybridClass):
 
         return solver
 
+    def retile_xy(self, xmin, xmax, ymin, ymax, *, zero_fields=True):
+        """Update x/y grid extents keeping grid counts unchanged.
+
+        Optionally zeros stored field arrays to avoid inconsistencies with the new geometry.
+        """
+        nx, ny, nz = len(self._x_grid), len(self._y_grid), len(self._z_grid)
+
+        self._x_grid = np.linspace(float(xmin), float(xmax), nx, dtype=np.float64)
+        self._y_grid = np.linspace(float(ymin), float(ymax), ny, dtype=np.float64)
+
+        if zero_fields:
+            self._rho[...] = 0.0
+            self._phi[...] = 0.0
+            self._dphi_dx[...] = 0.0
+            self._dphi_dy[...] = 0.0
+            self._dphi_dz[...] = 0.0
+
+        self.solver.refresh_geometry(self._x_grid, self._y_grid, self._z_grid)
+
+    def retile_xyz(self, xmin, xmax, ymin, ymax, zmin, zmax, *, zero_fields=True):
+        """Update x/y/z grid extents keeping grid counts unchanged.
+
+        Optionally zeros stored field arrays to avoid inconsistencies with the new geometry.
+        """
+        nx, ny, nz = self._x_grid.size, self._y_grid.size, self._z_grid.size
+
+        self._x_grid = np.linspace(float(xmin), float(xmax), nx, dtype=np.float64)
+        self._y_grid = np.linspace(float(ymin), float(ymax), ny, dtype=np.float64)
+        self._z_grid = np.linspace(float(zmin), float(zmax), nz, dtype=np.float64)
+
+        if zero_fields:
+            self._rho[...] = 0.0
+            self._phi[...] = 0.0
+            self._dphi_dx[...] = 0.0
+            self._dphi_dy[...] = 0.0
+            self._dphi_dz[...] = 0.0
+
+        self.solver.refresh_geometry(self._x_grid, self._y_grid, self._z_grid)
+
     @property
     def x_grid(self):
         """
@@ -563,6 +602,27 @@ class TriLinearInterpolatedFieldMap(xo.HybridClass):
         Array with the longitudinal grid points (cell centers).
         """
         return self._z_grid
+
+    @property
+    def x_range(self):
+        """
+        Horizontal range.
+        """
+        return (float(self._x_grid[0]), float(self._x_grid[-1]))
+
+    @property
+    def y_range(self):
+        """
+        Vertical range.
+        """
+        return (float(self._y_grid[0]), float(self._y_grid[-1]))
+
+    @property
+    def z_range(self):
+        """
+        Longitudinal range.
+        """
+        return (float(self._z_grid[0]), float(self._z_grid[-1]))
 
     @property
     def nx(self):
@@ -665,5 +725,4 @@ def _configure_grid(vname, v_grid, dv, v_range, nv):
             v_grid = np.linspace(v_range[0], v_range[1], nv)
 
     return v_grid
-
 
